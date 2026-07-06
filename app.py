@@ -118,7 +118,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Groq client ───────────────────────────────────────────────────────────────
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "os.environ.get("GROQ_API_KEY")"
 client = Groq(api_key=GROQ_API_KEY)
 
 # ── Synthetic data generator ──────────────────────────────────────────────────
