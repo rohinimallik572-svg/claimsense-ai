@@ -268,7 +268,7 @@ Provide:
 Keep it sharp, clinical, and actionable. Use plain language a medical reviewer can act on immediately."""
 
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=400,
@@ -576,7 +576,7 @@ CURRENT RESULTS:
                 api_messages = [{"role": "system", "content": vera_context}]
                 api_messages += st.session_state.vera_messages[-8:]
                 response = client.chat.completions.create(
-                    model="llama3-70b-8192",
+                    model="llama-3.3-70b-versatile",
                     messages=api_messages,
                     temperature=0.3,
                     max_tokens=350,
