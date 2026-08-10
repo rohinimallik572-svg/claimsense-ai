@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import datetime
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
@@ -23,102 +24,134 @@ st.set_page_config(
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-    .main { background-color: #0f1117; }
+.main { background-color: #000000; }
+.stApp { background-color: #000000; }
 
-    .hero-title {
-        font-size: 2.8rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #6ee7f7, #a78bfa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.2rem;
-    }
-    .hero-sub {
-        font-size: 1.05rem;
-        color: #9ca3af;
-        margin-bottom: 2rem;
-    }
-    .metric-card {
-        background: #1e2130;
-        border: 1px solid #2d3148;
-        border-radius: 12px;
-        padding: 1.2rem 1.5rem;
-        text-align: center;
-    }
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #6ee7f7;
-    }
-    .metric-label {
-        font-size: 0.8rem;
-        color: #9ca3af;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-    .flag-high {
-        background: #3b1219;
-        border-left: 4px solid #ef4444;
-        border-radius: 8px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
-    }
-    .flag-medium {
-        background: #2d2010;
-        border-left: 4px solid #f59e0b;
-        border-radius: 8px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
-    }
-    .flag-low {
-        background: #0f2818;
-        border-left: 4px solid #10b981;
-        border-radius: 8px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
-    }
-    .agent-box {
-        background: #13192b;
-        border: 1px solid #2d3a5e;
-        border-radius: 10px;
-        padding: 1.2rem;
-        font-size: 0.92rem;
-        color: #e2e8f0;
-        line-height: 1.7;
-    }
-    .section-header {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #e2e8f0;
-        border-bottom: 1px solid #2d3148;
-        padding-bottom: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    div[data-testid="stSidebar"] {
-        background-color: #141622;
-    }
-    .stButton > button {
-        background: linear-gradient(135deg, #6ee7f7, #a78bfa);
-        color: #0f1117;
-        font-weight: 600;
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1.5rem;
-        width: 100%;
-    }
-    .stButton > button:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-    }
+.hero-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6ee7f7, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.2rem;
+}
+.hero-sub {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+.intro-box {
+    background: #141726;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+.insight-banner {
+    background: linear-gradient(135deg, rgba(110,231,247,0.12), rgba(167,139,250,0.12));
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    color: #e2e8f0;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+.metric-card {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+}
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #6ee7f7;
+}
+.metric-label {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.chart-caption {
+    font-size: 0.8rem;
+    color: #7c8598;
+    margin-top: -0.5rem;
+    margin-bottom: 0.8rem;
+}
+.flag-high {
+    background: #3b1219;
+    border-left: 4px solid #ef4444;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+}
+.flag-medium {
+    background: #2d2010;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+}
+.flag-low {
+    background: #0f2818;
+    border-left: 4px solid #10b981;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+}
+.agent-box {
+    background: #13192b;
+    border: 1px solid #2d3a5e;
+    border-radius: 10px;
+    padding: 1.2rem;
+    font-size: 0.92rem;
+    color: #e2e8f0;
+    line-height: 1.7;
+}
+.section-header {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    border-bottom: 1px solid #2d3148;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+.footer-note {
+    color: #5b6478;
+    font-size: 0.78rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+div[data-testid="stSidebar"] {
+    background-color: #141622;
+}
+.stButton > button {
+    background: linear-gradient(135deg, #6ee7f7, #a78bfa);
+    color: #0f1117;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    width: 100%;
+}
+.stButton > button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ── Groq client ───────────────────────────────────────────────────────────────
-GROQ_API_KEY = "os.environ.get("GROQ_API_KEY")"
+# ── Groq client (key loaded from secrets, never hardcoded) ───────────────────
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
 
 # ── Synthetic data generator ──────────────────────────────────────────────────
@@ -129,36 +162,36 @@ def generate_claims(n=300, fraud_rate=0.12, seed=42):
     n_normal = n - n_fraud
 
     procedures = ["99213", "99214", "99215", "90837", "70553", "93000", "36415", "99232"]
-    diagnoses  = ["Z00.00", "M54.5", "J06.9", "E11.9", "I10", "F32.1", "K21.0", "G43.909"]
-    providers  = [f"PRV{str(i).zfill(4)}" for i in range(1, 31)]
-    payers     = ["BlueCross", "Aetna", "UnitedHealth", "Cigna", "Humana"]
+    diagnoses = ["Z00.00", "M54.5", "J06.9", "E11.9", "I10", "F32.1", "K21.0", "G43.909"]
+    providers = [f"PRV{str(i).zfill(4)}" for i in range(1, 31)]
+    payers = ["BlueCross", "Aetna", "UnitedHealth", "Cigna", "Humana"]
 
     def make_records(n_rows, is_fraud):
         if is_fraud:
-            amounts      = np.random.uniform(4500, 18000, n_rows)
-            units        = np.random.randint(8, 25, n_rows)
-            days_to_sub  = np.random.randint(0, 2, n_rows)
-            duplicates   = np.random.randint(2, 6, n_rows)
-            diff_prov    = np.random.randint(3, 8, n_rows)
+            amounts = np.random.uniform(4500, 18000, n_rows)
+            units = np.random.randint(8, 25, n_rows)
+            days_to_sub = np.random.randint(0, 2, n_rows)
+            duplicates = np.random.randint(2, 6, n_rows)
+            diff_prov = np.random.randint(3, 8, n_rows)
         else:
-            amounts      = np.random.uniform(150, 3500, n_rows)
-            units        = np.random.randint(1, 6, n_rows)
-            days_to_sub  = np.random.randint(3, 45, n_rows)
-            duplicates   = np.random.randint(0, 2, n_rows)
-            diff_prov    = np.random.randint(0, 3, n_rows)
+            amounts = np.random.uniform(150, 3500, n_rows)
+            units = np.random.randint(1, 6, n_rows)
+            days_to_sub = np.random.randint(3, 45, n_rows)
+            duplicates = np.random.randint(0, 2, n_rows)
+            diff_prov = np.random.randint(0, 3, n_rows)
 
         return pd.DataFrame({
-            "claim_id":          [f"CLM{np.random.randint(100000,999999)}" for _ in range(n_rows)],
-            "provider_id":       np.random.choice(providers, n_rows),
-            "payer":             np.random.choice(payers, n_rows),
-            "procedure_code":    np.random.choice(procedures, n_rows),
-            "diagnosis_code":    np.random.choice(diagnoses, n_rows),
-            "claim_amount":      np.round(amounts, 2),
-            "units_billed":      units,
-            "days_to_submit":    days_to_sub,
-            "duplicate_claims":  duplicates,
-            "diff_providers_30d":diff_prov,
-            "is_fraud":          int(is_fraud),
+            "claim_id": [f"CLM{np.random.randint(100000,999999)}" for _ in range(n_rows)],
+            "provider_id": np.random.choice(providers, n_rows),
+            "payer": np.random.choice(payers, n_rows),
+            "procedure_code": np.random.choice(procedures, n_rows),
+            "diagnosis_code": np.random.choice(diagnoses, n_rows),
+            "claim_amount": np.round(amounts, 2),
+            "units_billed": units,
+            "days_to_submit": days_to_sub,
+            "duplicate_claims": duplicates,
+            "diff_providers_30d": diff_prov,
+            "is_fraud": int(is_fraud),
         })
 
     df = pd.concat([make_records(n_normal, False), make_records(n_fraud, True)], ignore_index=True)
@@ -173,12 +206,10 @@ def run_ml(df):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    # Isolation Forest
     iso = IsolationForest(contamination=0.12, random_state=42)
-    df["anomaly_flag"] = iso.fit_predict(X_scaled)          # -1 = anomaly
-    df["anomaly_score"] = -iso.score_samples(X_scaled)      # higher = more anomalous
+    df["anomaly_flag"] = iso.fit_predict(X_scaled)
+    df["anomaly_score"] = -iso.score_samples(X_scaled)
 
-    # XGBoost risk classifier (supervised)
     y = df["is_fraud"]
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.25, random_state=42)
     model = xgb.XGBClassifier(n_estimators=120, max_depth=4, learning_rate=0.1,
@@ -186,11 +217,13 @@ def run_ml(df):
     model.fit(X_train, y_train)
     df["risk_score"] = model.predict_proba(X_scaled)[:, 1]
 
-    # Risk tier
     def tier(r):
-        if r >= 0.70: return "HIGH"
-        elif r >= 0.40: return "MEDIUM"
-        else: return "LOW"
+        if r >= 0.70:
+            return "HIGH"
+        elif r >= 0.40:
+            return "MEDIUM"
+        else:
+            return "LOW"
     df["risk_tier"] = df["risk_score"].apply(tier)
 
     report = classification_report(y_test, model.predict(X_test), output_dict=True)
@@ -219,14 +252,14 @@ CLAIM DATA:
 
 Provide:
 1. RISK SUMMARY (1-2 sentences): What makes this claim suspicious
-2. KEY RED FLAGS (bullet points): Specific data points that triggered concern  
+2. KEY RED FLAGS (bullet points): Specific data points that triggered concern
 3. RECOMMENDED ACTION: One of — Auto-Approve / Flag for Review / Escalate to Investigator
 4. CLINICAL REASONING: Brief explanation tying procedure/diagnosis to billing pattern
 
 Keep it sharp, clinical, and actionable. Use plain language a medical reviewer can act on immediately."""
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama3-70b-8192",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=400,
@@ -234,29 +267,40 @@ Keep it sharp, clinical, and actionable. Use plain language a medical reviewer c
     return response.choices[0].message.content
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  UI
+# UI
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Hero
 st.markdown('<div class="hero-title">🏥 ClaimSense AI</div>', unsafe_allow_html=True)
 st.markdown('<div class="hero-sub">Agentic Clinical Decision Intelligence · Anomaly Detection · Payment Integrity</div>', unsafe_allow_html=True)
 
+# Problem-framing intro so a first-time viewer understands the "why" before the dashboard
+st.markdown("""
+<div class="intro-box">
+Healthcare fraud costs the U.S. system tens of billions of dollars a year, and insurers process
+millions of claims daily — far more than any human team can review by hand. <b>ClaimSense AI</b>
+automates the first pass: it catches statistical anomalies, scores every claim for fraud risk,
+and explains <i>why</i> a claim looks suspicious in plain clinical language — so a human reviewer
+only spends time on the claims that actually need a second look.
+</div>
+""", unsafe_allow_html=True)
+
 # Sidebar
 with st.sidebar:
     st.markdown("### ⚙️ Configuration")
-    n_claims    = st.slider("Number of Claims", 100, 500, 300, 50)
-    fraud_rate  = st.slider("Fraud Rate (%)", 5, 25, 12, 1) / 100
-    top_n       = st.slider("Top Flagged Claims to Review", 3, 10, 5)
-    uploaded    = st.file_uploader("Upload Your Own CSV", type=["csv"],
-                                   help="Needs columns: claim_amount, units_billed, days_to_submit, duplicate_claims, diff_providers_30d")
-    run_btn     = st.button("▶ Run Analysis")
+    n_claims = st.slider("Number of Claims", 100, 500, 300, 50)
+    fraud_rate = st.slider("Fraud Rate (%)", 5, 25, 12, 1) / 100
+    top_n = st.slider("Top Flagged Claims to Review", 3, 10, 5)
+    uploaded = st.file_uploader("Upload Your Own CSV", type=["csv"],
+        help="Needs columns: claim_amount, units_billed, days_to_submit, duplicate_claims, diff_providers_30d")
+    run_btn = st.button("▶ Run Analysis")
     st.markdown("---")
-    st.markdown("**Built for Cotiviti**  \nTopic 2: Clinical Decision Making  \nAgentic AI · XGBoost · Isolation Forest  \nLLaMA-3 70B via Groq")
+    st.markdown("**Built for Cotiviti** \nTopic 2: Clinical Decision Making \nAgentic AI · XGBoost · Isolation Forest \nLLaMA-3 70B via Groq")
+    st.markdown(f"<div class='footer-note'>Analysis run: {datetime.datetime.now().strftime('%b %d, %Y %I:%M %p')}</div>", unsafe_allow_html=True)
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 if uploaded:
     df_raw = pd.read_csv(uploaded)
-    # fill missing columns with defaults for compatibility
     for col in ["is_fraud", "claim_id", "provider_id", "payer", "procedure_code", "diagnosis_code"]:
         if col not in df_raw.columns:
             df_raw[col] = 0 if col == "is_fraud" else "N/A"
@@ -267,11 +311,12 @@ else:
 df, report, importances = run_ml(df_raw)
 
 # ── KPI row ───────────────────────────────────────────────────────────────────
-high   = (df["risk_tier"] == "HIGH").sum()
+high = (df["risk_tier"] == "HIGH").sum()
 medium = (df["risk_tier"] == "MEDIUM").sum()
-anom   = (df["anomaly_flag"] == -1).sum()
-total  = len(df)
+anom = (df["anomaly_flag"] == -1).sum()
+total = len(df)
 flagged_amt = df[df["risk_tier"] == "HIGH"]["claim_amount"].sum()
+pct_high = high / total if total else 0
 
 c1, c2, c3, c4, c5 = st.columns(5)
 for col, val, lbl in zip(
@@ -285,10 +330,18 @@ for col, val, lbl in zip(
         <div class="metric-label">{lbl}</div>
     </div>""", unsafe_allow_html=True)
 
+# Plain-language insight banner, computed live from the actual results (not hardcoded)
+st.markdown(f"""
+<div class="insight-banner">
+📌 Out of <b>{total}</b> claims analyzed, <b>{high} ({pct_high:.0%})</b> were flagged HIGH risk —
+representing <b>${flagged_amt:,.0f}</b> in exposure that would otherwise need manual review before this system existed.
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "🚨 Flagged Claims", "🤖 AI Agent Review", "📈 Model Insights"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "🚨 Flagged Claims", "🤖 AI Agent Review", "📈 Model Insights", "💬 Ask Vera"])
 
 # ── TAB 1: Dashboard ──────────────────────────────────────────────────────────
 with tab1:
@@ -296,19 +349,19 @@ with tab1:
 
     with col_a:
         st.markdown('<div class="section-header">Risk Distribution</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-caption">Share of claims by risk tier — a healthy system skews toward LOW.</div>', unsafe_allow_html=True)
         tier_counts = df["risk_tier"].value_counts().reset_index()
         tier_counts.columns = ["Risk Tier", "Count"]
         color_map = {"HIGH": "#ef4444", "MEDIUM": "#f59e0b", "LOW": "#10b981"}
         fig_pie = px.pie(tier_counts, names="Risk Tier", values="Count",
-                         color="Risk Tier", color_discrete_map=color_map,
-                         hole=0.5)
+                          color="Risk Tier", color_discrete_map=color_map, hole=0.5)
         fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                               font_color="#e2e8f0", showlegend=True,
-                               margin=dict(t=20, b=20))
+                               font_color="#e2e8f0", showlegend=True, margin=dict(t=20, b=20))
         st.plotly_chart(fig_pie, use_container_width=True)
 
     with col_b:
         st.markdown('<div class="section-header">Claim Amount vs Risk Score</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-caption">Bubble size = units billed. Larger, higher bubbles are the ones worth a second look.</div>', unsafe_allow_html=True)
         fig_scatter = px.scatter(df, x="claim_amount", y="risk_score",
                                   color="risk_tier", color_discrete_map=color_map,
                                   size="units_billed", hover_data=["claim_id", "procedure_code"],
@@ -321,6 +374,7 @@ with tab1:
 
     with col_c:
         st.markdown('<div class="section-header">Anomaly Score Distribution</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-caption">How unusual each claim looks statistically, independent of the fraud label.</div>', unsafe_allow_html=True)
         fig_hist = px.histogram(df, x="anomaly_score", color="risk_tier",
                                  color_discrete_map=color_map, nbins=40,
                                  labels={"anomaly_score": "Anomaly Score"})
@@ -330,6 +384,7 @@ with tab1:
 
     with col_d:
         st.markdown('<div class="section-header">Duplicate Claims by Risk Tier</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-caption">Repeat billing in a 30-day window is one of the strongest fraud signals.</div>', unsafe_allow_html=True)
         fig_box = px.box(df, x="risk_tier", y="duplicate_claims",
                           color="risk_tier", color_discrete_map=color_map,
                           labels={"duplicate_claims": "Duplicate Claims (30d)", "risk_tier": "Risk Tier"})
@@ -367,7 +422,7 @@ with tab2:
     st.markdown("---")
     st.markdown('<div class="section-header">Full Claims Table</div>', unsafe_allow_html=True)
     display_cols = ["claim_id", "procedure_code", "diagnosis_code", "claim_amount",
-                    "units_billed", "duplicate_claims", "risk_score", "risk_tier", "anomaly_flag"]
+                     "units_billed", "duplicate_claims", "risk_score", "risk_tier", "anomaly_flag"]
     st.dataframe(df[display_cols].sort_values("risk_score", ascending=False),
                  use_container_width=True, height=350)
 
@@ -406,7 +461,7 @@ with tab3:
         if st.button("🤖 Run AI Agent Review"):
             with st.spinner("Agent analyzing claim..."):
                 explanation = explain_claim(selected_row)
-            st.markdown(f'<div class="agent-box">{explanation}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="agent-box">{explanation}</div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("**Batch AI Review — Top 3 HIGH Risk Claims**")
@@ -415,39 +470,30 @@ with tab3:
         for _, row in batch.iterrows():
             with st.spinner(f"Analyzing {row['claim_id']}..."):
                 exp = explain_claim(row)
-            tier_class = "flag-high" if row["risk_tier"] == "HIGH" else "flag-medium"
-            st.markdown(f"### 🔴 {row['claim_id']} — Risk: {row['risk_score']:.1%}")
-            st.markdown(f'<div class="agent-box">{exp}</div>', unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown(f"### 🔴 {row['claim_id']} — Risk: {row['risk_score']:.1%}")
+                st.markdown(f'<div class="agent-box">{exp}</div>', unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
 
 # ── TAB 4: Model Insights ─────────────────────────────────────────────────────
 with tab4:
     st.markdown('<div class="section-header">XGBoost Feature Importance</div>', unsafe_allow_html=True)
+    st.markdown('<div class="chart-caption">Which claim features the model actually relies on to flag fraud.</div>', unsafe_allow_html=True)
     imp_df = pd.DataFrame(list(importances.items()), columns=["Feature", "Importance"]).sort_values("Importance")
     fig_imp = px.bar(imp_df, x="Importance", y="Feature", orientation="h",
-                     color="Importance", color_continuous_scale="teal")
+                      color="Importance", color_continuous_scale="teal")
     fig_imp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                            font_color="#e2e8f0", margin=dict(t=20, b=20), showlegend=False)
     st.plotly_chart(fig_imp, use_container_width=True)
 
     st.markdown('<div class="section-header">Model Performance</div>', unsafe_allow_html=True)
-    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
-    for col, label, key in zip(
-        [col_r1, col_r2, col_r3, col_r4],
-        ["Precision (Fraud)", "Recall (Fraud)", "F1-Score (Fraud)", "Accuracy"],
-        ["1", "1", "1", "accuracy"]
-    ):
-        val = report[key]["precision"] if key == "1" else (
-              report[key]["recall"] if key == "1" else (
-              report[key]["f1-score"] if key == "1" else report.get("accuracy", 0)))
-        if key == "accuracy":
-            val = report.get("accuracy", 0)
-        elif label == "Precision (Fraud)":
-            val = report["1"]["precision"]
-        elif label == "Recall (Fraud)":
-            val = report["1"]["recall"]
-        else:
-            val = report["1"]["f1-score"]
+    metric_defs = [
+        ("Precision (Fraud)", report["1"]["precision"]),
+        ("Recall (Fraud)", report["1"]["recall"]),
+        ("F1-Score (Fraud)", report["1"]["f1-score"]),
+        ("Accuracy", report.get("accuracy", 0)),
+    ]
+    cols = st.columns(4)
+    for col, (label, val) in zip(cols, metric_defs):
         col.markdown(f"""
         <div class="metric-card">
             <div class="metric-value">{val:.1%}</div>
@@ -458,19 +504,81 @@ with tab4:
     st.markdown('<div class="section-header">How It Works</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="agent-box">
-    <b>Step 1 — Isolation Forest (Unsupervised)</b><br>
-    Detects statistically anomalous claims by isolating outliers in the feature space. No labels required.
-    Claims with unusual combinations of amount, units, submission timing, and duplicate patterns are flagged.<br><br>
+        <b>Step 1 — Isolation Forest (Unsupervised)</b><br>
+        Detects statistically anomalous claims by isolating outliers in the feature space. No labels required.
+        Claims with unusual combinations of amount, units, submission timing, and duplicate patterns are flagged.<br><br>
 
-    <b>Step 2 — XGBoost Classifier (Supervised)</b><br>
-    A gradient-boosted tree model trained on labeled fraud data assigns each claim a risk probability score (0–100%).
-    The model learns complex non-linear patterns invisible to rule-based systems.<br><br>
+        <b>Step 2 — XGBoost Classifier (Supervised)</b><br>
+        A gradient-boosted tree model trained on labeled fraud data assigns each claim a risk probability score (0–100%).
+        The model learns complex non-linear patterns invisible to rule-based systems.<br><br>
 
-    <b>Step 3 — LLaMA-3 Clinical Agent (Agentic AI)</b><br>
-    Flagged claims are passed to a LLaMA-3 70B language model via Groq. The agent performs chain-of-thought
-    clinical reasoning — tying procedure codes, diagnosis codes, billing patterns, and risk scores into
-    a plain-language recommendation a medical reviewer can act on immediately.<br><br>
+        <b>Step 3 — LLaMA-3 Clinical Agent (Agentic AI)</b><br>
+        Flagged claims are passed to a LLaMA-3 70B language model via Groq. The agent performs chain-of-thought
+        clinical reasoning — tying procedure codes, diagnosis codes, billing patterns, and risk scores into
+        a plain-language recommendation a medical reviewer can act on immediately.<br><br>
 
-    <b>TPO Coverage:</b> Treatment (clinical code alignment) · Payment (amount/duplicate anomalies) · Operations (submission timing, provider patterns)
+        <b>Coverage:</b> Treatment (clinical code alignment) · Payment (amount/duplicate anomalies) · Operations (submission timing, provider patterns)
     </div>
     """, unsafe_allow_html=True)
+
+# ── TAB 5: Ask Vera (chat assistant) ──────────────────────────────────────────
+with tab5:
+    st.markdown('<div class="section-header">💬 Ask Vera</div>', unsafe_allow_html=True)
+    st.markdown('<div class="chart-caption">Vera knows the current results on screen — ask about risk, specific claims, or how the model works.</div>', unsafe_allow_html=True)
+
+    if "vera_messages" not in st.session_state:
+        st.session_state.vera_messages = []
+
+    top_flags = df[df["risk_tier"] == "HIGH"].sort_values("risk_score", ascending=False).head(5)
+    top_flags_text = "\n".join(
+        f"- {r['claim_id']}: ${r['claim_amount']:,.2f}, {r['units_billed']} units, "
+        f"{r['duplicate_claims']} duplicates, risk {r['risk_score']:.0%}"
+        for _, r in top_flags.iterrows()
+    )
+    vera_context = f"""You are Vera, the AI assistant embedded in ClaimSense AI, a healthcare claims
+fraud detection dashboard. Answer questions about the CURRENT results shown below. Be concise,
+plain-spoken, and specific — reference real numbers from this data. If asked something the data
+can't answer, say so honestly rather than guessing.
+
+CURRENT RESULTS:
+- Total claims analyzed: {total}
+- HIGH risk: {high} ({pct_high:.0%})
+- MEDIUM risk: {medium}
+- Anomalies detected (Isolation Forest): {anom}
+- Total HIGH risk exposure: ${flagged_amt:,.0f}
+- Top 5 flagged claims:
+{top_flags_text}
+- Model performance: Precision {report['1']['precision']:.0%}, Recall {report['1']['recall']:.0%}, F1 {report['1']['f1-score']:.0%}
+- Most important feature: {max(importances, key=importances.get)}
+"""
+
+    for msg in st.session_state.vera_messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    user_q = st.chat_input("Ask Vera about these claims...")
+    if user_q:
+        st.session_state.vera_messages.append({"role": "user", "content": user_q})
+        with st.chat_message("user"):
+            st.markdown(user_q)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Vera is thinking..."):
+                api_messages = [{"role": "system", "content": vera_context}]
+                api_messages += st.session_state.vera_messages[-8:]
+                response = client.chat.completions.create(
+                    model="llama3-70b-8192",
+                    messages=api_messages,
+                    temperature=0.3,
+                    max_tokens=350,
+                )
+                answer = response.choices[0].message.content
+                st.markdown(answer)
+        st.session_state.vera_messages.append({"role": "assistant", "content": answer})
+
+    if st.session_state.vera_messages:
+        if st.button("Clear conversation"):
+            st.session_state.vera_messages = []
+            st.rerun()
+
+st.markdown('<div class="footer-note">ClaimSense AI — built by Rohini Mallikarjunaiah · originally for a Cotiviti intern assessment</div>', unsafe_allow_html=True)
