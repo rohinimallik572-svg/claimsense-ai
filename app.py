@@ -211,7 +211,11 @@ def run_ml(df):
     df["anomaly_score"] = -iso.score_samples(X_scaled)
 
     y = df["is_fraud"]
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.25, random_state=42)
+    # stratify=y keeps the same fraud/normal ratio in both train and test splits,
+    # so the test set can never end up with zero fraud examples in it.
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_scaled, y, test_size=0.25, random_state=42, stratify=y
+    )
     model = xgb.XGBClassifier(n_estimators=120, max_depth=4, learning_rate=0.1,
                                use_label_encoder=False, eval_metric="logloss", random_state=42)
     model.fit(X_train, y_train)
@@ -226,7 +230,12 @@ def run_ml(df):
             return "LOW"
     df["risk_tier"] = df["risk_score"].apply(tier)
 
-    report = classification_report(y_test, model.predict(X_test), output_dict=True)
+    report = classification_report(
+        y_test, model.predict(X_test), output_dict=True, zero_division=0
+    )
+    # Defensive fallback in case the "1" (fraud) class is ever still missing
+    if "1" not in report:
+        report["1"] = {"precision": 0.0, "recall": 0.0, "f1-score": 0.0}
     importances = dict(zip(FEATURES, model.feature_importances_))
 
     return df, report, importances
